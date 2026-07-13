@@ -34,9 +34,9 @@ class App extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0757A6)),
         scaffoldBackgroundColor: const Color(0xFFF3F6FB),
       ),
-      home: const Directionality(
+      home: Directionality(
         textDirection: TextDirection.rtl,
-        child: Home(),
+        child: const Home(),
       ),
     );
   }
