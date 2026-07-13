@@ -1,31 +1,42 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 
-void main()=>runApp(const App());
-const blocks={1:14,2:12,3:20,4:18,5:20,6:24,7:12,8:21};
-const activities=['نماکاری','دیوارچینی','سرامیک‌کاری','گچ‌کاری','کاشی‌کاری','سنگ‌کاری','نقاشی','کناف','تأسیسات مکانیکی','تأسیسات برقی','عایق‌کاری','سایر'];
-String date(){final j=Jalali.now();return '${j.year}/${j.month.toString().padLeft(2,'0')}/${j.day.toString().padLeft(2,'0')}';}
+void main() => runApp(const App());
 
-class App extends StatelessWidget{const App({super.key});@override Widget build(BuildContext c)=>MaterialApp(debugShowCheckedModeBanner:false,theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:const Color(0xff0757a6)),scaffoldBackgroundColor:const Color(0xfff3f6fb)),home:const Directionality(textDirection:TextDirection.rtl,child:Home()));}
-class Home extends StatefulWidget{const Home({super.key});@override State<Home> createState()=>_Home();}
-class _Home extends State<Home>{
- int tab=0; List<Map<String,dynamic>> data=[]; Set<int> allowed={1,2}; bool ready=false;
- @override void initState(){super.initState();load();}
- Future<void> load()async{final p=await SharedPreferences.getInstance();final s=p.getString('reports');if(s!=null)data=List<Map<String,dynamic>>.from(jsonDecode(s).map((e)=>Map<String,dynamic>.from(e)));final z=p.getStringList('zones');if(z!=null)allowed=z.map(int.parse).toSet();setState(()=>ready=true);}
- Future<void> save()async{final p=await SharedPreferences.getInstance();await p.setString('reports',jsonEncode(data));await p.setStringList('zones',allowed.map((e)=>'$e').toList());}
- @override Widget build(BuildContext c){if(!ready)return const Scaffold(body:Center(child:CircularProgressIndicator()));return Scaffold(appBar:AppBar(backgroundColor:const Color(0xff0757a6),foregroundColor:Colors.white,title:const Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('پروژه ۱۴۱ بلوک',style:TextStyle(fontWeight:FontWeight.bold)),Text('سامانه گزارش روزانه کارگاه',style:TextStyle(fontSize:12))])),body:[Dash(data),Entry(allowed,(r){setState(()=>data.add(r));save();}),History(data,(i){setState(()=>data.removeAt(i));save();}),Access(allowed,(s){setState(()=>allowed=s);save();})][tab],bottomNavigationBar:NavigationBar(selectedIndex:tab,onDestinationSelected:(i)=>setState(()=>tab=i),destinations:const [NavigationDestination(icon:Icon(Icons.dashboard),label:'داشبورد'),NavigationDestination(icon:Icon(Icons.add_box),label:'ثبت روزانه'),NavigationDestination(icon:Icon(Icons.history),label:'سوابق'),NavigationDestination(icon:Icon(Icons.admin_panel_settings),label:'دسترسی')])) ;}
+const Map<int, int> blocks = {
+  1: 14, 2: 12, 3: 20, 4: 18,
+  5: 20, 6: 24, 7: 12, 8: 21,
+};
+
+const activities = [
+  'نماکاری', 'دیوارچینی', 'سرامیک‌کاری', 'گچ‌کاری',
+  'کاشی‌کاری', 'سنگ‌کاری', 'نقاشی', 'کناف',
+  'تأسیسات مکانیکی', 'تأسیسات برقی', 'عایق‌کاری', 'سایر',
+];
+
+String today() {
+  final j = Jalali.now();
+  return '${j.year}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}';
 }
-class Dash extends StatelessWidget{final List<Map<String,dynamic>> d;const Dash(this.d,{super.key});@override Widget build(BuildContext c){final t=date(),today=d.where((r)=>r['date']==t).toList(),n=today.fold<int>(0,(s,r)=>s+(r['labor'] as int));return ListView(padding:const EdgeInsets.all(16),children:[Text('داشبورد امروز  •  $t',style:const TextStyle(fontSize:22,fontWeight:FontWeight.bold)),const SizedBox(height:12),Row(children:[Expanded(child:card('نیروی انسانی','$n',Icons.groups)),Expanded(child:card('گزارش امروز','${today.length}',Icons.fact_check))]),Row(children:[Expanded(child:card('کل بلوک‌ها','۱۴۱',Icons.apartment)),Expanded(child:card('زون‌ها','۸',Icons.location_city))]),const SizedBox(height:14),const Text('وضعیت زون‌ها',style:TextStyle(fontSize:19,fontWeight:FontWeight.bold)),...blocks.entries.map((z)=>Card(child:ListTile(leading:CircleAvatar(child:Text('${z.key}')),title:Text('زون ${z.key}'),subtitle:Text('${z.value} بلوک'),trailing:Text('${today.where((r)=>r['zone']==z.key).fold<int>(0,(s,r)=>s+(r['labor'] as int))} نفر')))]);}
- Widget card(String a,String b,IconData i)=>Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[Icon(i),Text(b,style:const TextStyle(fontSize:26,fontWeight:FontWeight.bold)),Text(a)])));
-}
-class Entry extends StatefulWidget{final Set<int> zones;final ValueChanged<Map<String,dynamic>> add;const Entry(this.zones,this.add,{super.key});@override State<Entry> createState()=>_Entry();}
-class _Entry extends State<Entry>{late int z;int b=1,labor=1,mcount=0;String act=activities.first,contractor='',machine='بدون ماشین‌آلات',notes='',dt=date();@override void initState(){super.initState();z=widget.zones.first;}@override void didUpdateWidget(covariant Entry old){super.didUpdateWidget(old);if(!widget.zones.contains(z)){z=widget.zones.first;b=1;}}
- @override Widget build(BuildContext c)=>ListView(padding:const EdgeInsets.all(16),children:[const Text('ثبت گزارش روزانه',style:TextStyle(fontSize:24,fontWeight:FontWeight.bold)),const SizedBox(height:12),field('تاریخ شمسی',dt,(v)=>dt=v),const SizedBox(height:10),DropdownButtonFormField<int>(value:z,decoration:dec('زون'),items:widget.zones.map((x)=>DropdownMenuItem(value:x,child:Text('زون $x'))).toList(),onChanged:(v)=>setState((){z=v!;b=1;})),const SizedBox(height:10),DropdownButtonFormField<int>(value:b,decoration:dec('بلوک'),items:List.generate(blocks[z]!, (i)=>DropdownMenuItem(value:i+1,child:Text('بلوک ${i+1}'))),onChanged:(v)=>setState(()=>b=v!)),const SizedBox(height:10),DropdownButtonFormField<String>(value:act,decoration:dec('فعالیت'),items:activities.map((x)=>DropdownMenuItem(value:x,child:Text(x))).toList(),onChanged:(v)=>setState(()=>act=v!)),const SizedBox(height:10),field('تعداد نیروی انسانی','1',(v)=>labor=int.tryParse(v)??0,num:true),const SizedBox(height:10),field('پیمانکار','',(v)=>contractor=v),const SizedBox(height:10),field('ماشین‌آلات','',(v)=>machine=v),const SizedBox(height:10),field('تعداد ماشین‌آلات','0',(v)=>mcount=int.tryParse(v)??0,num:true),const SizedBox(height:10),field('توضیحات','',(v)=>notes=v,lines:3),const SizedBox(height:14),FilledButton.icon(onPressed:(){widget.add({'date':dt,'zone':z,'block':b,'activity':act,'labor':labor,'contractor':contractor,'machine':machine,'machineCount':mcount,'notes':notes});ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content:Text('گزارش به‌صورت دائمی ذخیره شد')));},icon:const Icon(Icons.save),label:const Padding(padding:EdgeInsets.all(14),child:Text('ثبت نهایی گزارش')))]);}
- InputDecoration dec(String x)=>InputDecoration(labelText:x,border:const OutlineInputBorder());
- Widget field(String l,String v,ValueChanged<String> f,{bool num=false,int lines=1})=>TextFormField(initialValue:v,maxLines:lines,keyboardType:num?TextInputType.number:null,decoration:dec(l),onChanged:f);
-}
-class History extends StatelessWidget{final List<Map<String,dynamic>> d;final ValueChanged<int> del;const History(this.d,this.del,{super.key});@override Widget build(BuildContext c)=>d.isEmpty?const Center(child:Text('هنوز گزارشی ثبت نشده است')):ListView(padding:const EdgeInsets.all(12),children:d.asMap().entries.toList().reversed.map((e){final r=e.value;return Card(child:ListTile(title:Text('${r['activity']} • زون ${r['zone']} / بلوک ${r['block']}'),subtitle:Text('${r['date']} • ${r['labor']} نفر\n${r['contractor']}'),isThreeLine:true,trailing:IconButton(icon:const Icon(Icons.delete_outline),onPressed:()=>del(e.key))));}).toList());}
-class Access extends StatefulWidget{final Set<int> z;final ValueChanged<Set<int>> change;const Access(this.z,this.change,{super.key});@override State<Access> createState()=>_Access();}
-class _Access extends State<Access>{late Set<int> s={...widget.z};@override Widget build(BuildContext c)=>ListView(padding:const EdgeInsets.all(16),children:[const Text('مدیریت دسترسی سرناظر',style:TextStyle(fontSize:23,fontWeight:FontWeight.bold)),const Text('مدیر زون‌های مجاز سرناظر را انتخاب می‌کند.'),const SizedBox(height:16),Wrap(spacing:8,children:List.generate(8,(i){final z=i+1;return FilterChip(label:Text('زون $z'),selected:s.contains(z),onSelected:(v){setState((){if(v)s.add(z);else if(s.length>1)s.remove(z);});widget.change({...s});});}))]);}
+
+class App extends StatelessWidget {
+  const App({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0757A6)),
+        scaffoldBackgroundColor: const Color(0xFFF3F6FB),
+      ),
+      home: const Directionality(
+        textDirection: TextDirection.rtl,
+        child: Home(),
+      ),
+    );
+  }
