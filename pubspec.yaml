@@ -1,16 +1,13 @@
 name: construction_daily_report
-description: MVP Persian Android app for daily construction workforce and machinery reporting.
+description: Construction daily reporting
 publish_to: 'none'
-version: 1.0.0+1
+version: 3.0.0+3
 environment:
   sdk: '>=3.3.0 <4.0.0'
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^4.0.0
+  shared_preferences: ^2.3.2
+  shamsi_date: ^1.0.2
 flutter:
   uses-material-design: true
